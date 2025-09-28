@@ -9,17 +9,22 @@ class Blackjack
     @dealer = starting_cards
   end
 
+  def play_game
+    print_logo
+    print_info
+    game_loop
+    # another game
+  end
+
   # Loop that handles playing the game itself
   def game_loop
-    # print_cards
+    loop do
+      print_cards
 
-    # if player_choice == "hit"
-    #   player.cards << generate_random_card
-    # end
-    # puts "You get a card"
-    # puts "dealer gets a card"
+      choice = player_choice
 
-    # dealer.hand << generate_random_card
+      hit if choice == "hit"
+    end
   end
 
   # Creates the starting hand which contains 2 cards
@@ -31,6 +36,10 @@ class Blackjack
     end
 
     return cards
+  end
+
+  def hit
+    player.cards << generate_random_card
   end
 
   # Generates a random card from a random suit
@@ -58,7 +67,7 @@ class Blackjack
   end
 
   # Gets the players total
-  def caculate_total(cards)
+  def total(cards)
     total = 0
 
     cards.each do |card|
@@ -106,9 +115,80 @@ class Blackjack
   end
 
   def print_cards
-    p player.cards
+    player.cards.each_with_index do |card, index|
+      case card[0]
+      when "D"
+        print_card(print_diamonds(card), index)
+      when "H"
+        print_card(print_hearts(card), index)
+      when "C"
+        print_card(print_clubs(card), index)
+      when "S"
+        print_card(print_spades(card), index)
+      end
+    end
+  end
+
+  def print_card(card, index)
+    if index == 0
+      card.each { |line| puts line }
+    else
+      print "\e[10A"
+      counter = -1
+
+      10.times do
+        counter += 1    
+        print "\e[0G\e[#{index * 20}C #{card[counter]}\e[E"
+      end
+    end
+  end
+
+  def print_diamonds(card)
+    ["+--------------+", "| #{card[1]}            |", '|      /\      |', 
+     '|     /  \     |', '|    / /\ \    |', '|    \ \/ /    |', '|     \  /     |',
+     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
+  end
+
+  def print_hearts(card)
+    ["+--------------+", "| #{card[1]}            |", '|    _    _    |',
+     '|  (   )(   )  |', '|   \      /   |', '|    \    /    |', '|     \  /     |',
+     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
+  end
+
+  def print_clubs(card)
+    ["+--------------+", "| #{card[1]}            |", '|      __      |', 
+     '|    _(  )_    |', '|  _(      )_  |', '| (___    ___) |', '|     \  /     |',
+     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
+  end
+
+  def print_spades(card)
+    ["+--------------+", "| #{card[1]}            |", '|      /\      |', 
+     '|     /  \     |', '|    /    \    |', '|   (_/||\_)   |', '|      ||      |', 
+     '|      /\      |', "|            #{card[1]} |", "+--------------+"]
+  end
+
+  def print_logo
+    puts '/$$$$$$$  /$$                      /$$                               /$$'    
+    puts '| $$__  $$| $$                    | $$                              | $$'      
+    puts '| $$  \ $$| $$  /$$$$$$   /$$$$$$$| $$   /$$ /$$  /$$$$$$   /$$$$$$$| $$   /$$'
+    puts '| $$$$$$$ | $$ |____  $$ /$$_____/| $$  /$$/|__/ |____  $$ /$$_____/| $$  /$$/'
+    puts '| $$__  $$| $$  /$$$$$$$| $$      | $$$$$$/  /$$  /$$$$$$$| $$      | $$$$$$/ '
+    puts '| $$  \ $$| $$ /$$__  $$| $$      | $$_  $$ | $$ /$$__  $$| $$      | $$_  $$ '
+    puts '| $$$$$$$/| $$|  $$$$$$$|  $$$$$$$| $$ \  $$| $$|  $$$$$$$|  $$$$$$$| $$ \  $$'
+    puts '|_______/ |__/ \_______/ \_______/|__/  \__/| $$ \_______/ \_______/|__/  \__/'
+    puts '                                       /$$  | $$'                  
+    puts '                                      |  $$$$$$/'                             
+    puts '                                       \______/'
+  end
+
+  def print_info
+    puts ""
+    puts "  Welcome to Blackjack!"
+    puts "   Here are your cards"
   end
 end
 
-# game = Blackjack.new
-# game.game_loop
+game = Blackjack.new
+# game.play_game
+game.player.cards = ["SA", "D8", "HQ", "CJ"]
+game.print_cards
