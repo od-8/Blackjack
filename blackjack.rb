@@ -1,29 +1,56 @@
 require_relative "player"
-require_relative "deck"
+require_relative "dealer"
+require_relative "display"
 
 class Blackjack
+  include Display
+
   attr_accessor :player, :dealer
 
   def initialize
     @player = Player.new("Player", starting_cards)
-    @dealer = starting_cards
+    dealer_cards = starting_cards
+    @dealer = Dealer.new(dealer_cards, dealer_cards[0])
   end
 
   def play_game
     print_logo
-    print_info
-    game_loop
+    print_cards
+    # print_info
+    result = game_loop
+    
+    winner if result == "stand"
     # another game
   end
 
   # Loop that handles playing the game itself
   def game_loop
+    choice = "hit"
+
     loop do
+      choice = player_choice if choice == "hit"
+
+      hit(player) if choice == "hit"
+      print "\e[14A\e[J"
       print_cards
 
-      choice = player_choice
+      break if game_over?
 
-      hit if choice == "hit"
+      hit(dealer) if total(dealer) < 17
+
+      break if game_over?
+
+      return "stand" if (total(dealer) > 17 && choice == "stand")
+    end
+  end
+
+  def winner
+    if total(player) > total(dealer)
+      puts "Player Wins!"
+    elsif total(player) < total(dealer)
+      puts "Dealer Wins!"
+    else
+      puts "Its a tie"
     end
   end
 
@@ -38,8 +65,8 @@ class Blackjack
     return cards
   end
 
-  def hit
-    player.cards << generate_random_card
+  def hit(person)
+    person.cards << generate_random_card
   end
 
   # Generates a random card from a random suit
@@ -67,10 +94,10 @@ class Blackjack
   end
 
   # Gets the players total
-  def total(cards)
+  def total(person)
     total = 0
 
-    cards.each do |card|
+    person.cards.each do |card|
       total += 10 if %w[J Q K].include?(card[1])
     
       total += card[1].to_i if card[1].to_i.is_a?(Integer)
@@ -78,27 +105,17 @@ class Blackjack
       total += 1 if card[1] == "A"
     end
 
-    total += 10 if (total + 10) < 22
+    total += 10 if ((total + 10) < 22) && person.cards.any? { |card| card[1] == "A" }
 
     return total
   end
 
-  def has_blackjack?(cards)
-    return true if caculate_total(cards) == 21 && cards.length == 2
-
-    false
+  def dealer_win
+    puts "The dealer won"
   end
 
-  def has_21(cards)
-    return true if caculate_total(cards) == 21
-
-    false
-  end
-
-  def is_bust?(cards)
-    return true if caculate_total(cards) < 21
-
-    false
+  def player_win
+    puts "The player won"
   end
 
   # Gets the player choice
@@ -114,81 +131,48 @@ class Blackjack
     end
   end
 
-  def print_cards
-    player.cards.each_with_index do |card, index|
-      case card[0]
-      when "D"
-        print_card(print_diamonds(card), index)
-      when "H"
-        print_card(print_hearts(card), index)
-      when "C"
-        print_card(print_clubs(card), index)
-      when "S"
-        print_card(print_spades(card), index)
-      end
+  def has_blackjack?(person)
+    return true if total(person) == 21 && person.cards.length == 21
+      
+    false
+  end
+
+  def game_over?
+    return true if blackjack?
+    return true if is_bust?
+  end
+
+  def blackjack?
+    if has_blackjack?(player) && has_blackjack?(dealer)
+      puts "You both have blackjack draw"
+      return true
+    elsif has_blackjack?(player) 
+      puts "Player wins with blackjack"
+      return true
+    elsif has_blackjack?(dealer)
+      puts "Dealer wins with blackjack"
+      return true
     end
+
+    return false
   end
 
-  def print_card(card, index)
-    if index == 0
-      card.each { |line| puts line }
-    else
-      print "\e[10A"
-      counter = -1
-
-      10.times do
-        counter += 1    
-        print "\e[0G\e[#{index * 20}C #{card[counter]}\e[E"
-      end
+  def is_bust?
+    if total(player) > 21
+      puts "Player is bust"
+      return true
+    elsif total(dealer) > 21
+      puts "Dealer is bust"
+      return true
     end
-  end
 
-  def print_diamonds(card)
-    ["+--------------+", "| #{card[1]}            |", '|      /\      |', 
-     '|     /  \     |', '|    / /\ \    |', '|    \ \/ /    |', '|     \  /     |',
-     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
-  end
-
-  def print_hearts(card)
-    ["+--------------+", "| #{card[1]}            |", '|    _    _    |',
-     '|  (   )(   )  |', '|   \      /   |', '|    \    /    |', '|     \  /     |',
-     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
-  end
-
-  def print_clubs(card)
-    ["+--------------+", "| #{card[1]}            |", '|      __      |', 
-     '|    _(  )_    |', '|  _(      )_  |', '| (___    ___) |', '|     \  /     |',
-     '|      \/      |', "|            #{card[1]} |", "+--------------+"]
-  end
-
-  def print_spades(card)
-    ["+--------------+", "| #{card[1]}            |", '|      /\      |', 
-     '|     /  \     |', '|    /    \    |', '|   (_/||\_)   |', '|      ||      |', 
-     '|      /\      |', "|            #{card[1]} |", "+--------------+"]
-  end
-
-  def print_logo
-    puts '/$$$$$$$  /$$                      /$$                               /$$'    
-    puts '| $$__  $$| $$                    | $$                              | $$'      
-    puts '| $$  \ $$| $$  /$$$$$$   /$$$$$$$| $$   /$$ /$$  /$$$$$$   /$$$$$$$| $$   /$$'
-    puts '| $$$$$$$ | $$ |____  $$ /$$_____/| $$  /$$/|__/ |____  $$ /$$_____/| $$  /$$/'
-    puts '| $$__  $$| $$  /$$$$$$$| $$      | $$$$$$/  /$$  /$$$$$$$| $$      | $$$$$$/ '
-    puts '| $$  \ $$| $$ /$$__  $$| $$      | $$_  $$ | $$ /$$__  $$| $$      | $$_  $$ '
-    puts '| $$$$$$$/| $$|  $$$$$$$|  $$$$$$$| $$ \  $$| $$|  $$$$$$$|  $$$$$$$| $$ \  $$'
-    puts '|_______/ |__/ \_______/ \_______/|__/  \__/| $$ \_______/ \_______/|__/  \__/'
-    puts '                                       /$$  | $$'                  
-    puts '                                      |  $$$$$$/'                             
-    puts '                                       \______/'
-  end
-
-  def print_info
-    puts ""
-    puts "  Welcome to Blackjack!"
-    puts "   Here are your cards"
+    false
   end
 end
 
 game = Blackjack.new
-# game.play_game
-game.player.cards = ["SA", "D8", "HQ", "CJ"]
-game.print_cards
+game.play_game
+# game.player.cards = ["SA", "D8", "HQ", "CJ"]
+# game.print_cards
+
+# if both stand and even its a draw
