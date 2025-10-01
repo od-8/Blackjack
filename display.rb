@@ -1,7 +1,6 @@
 module Display
   # Prints dealers face card and players cards
   def print_cards
-    puts ""
     print_face_card
     print_player_cards
     puts ""
@@ -86,6 +85,7 @@ module Display
 
   # Blackjack logo
   def print_logo
+    puts ""
     puts '/$$$$$$$  /$$                      /$$                               /$$'    
     puts '| $$__  $$| $$                    | $$                              | $$'      
     puts '| $$  \ $$| $$  /$$$$$$   /$$$$$$$| $$   /$$ /$$  /$$$$$$   /$$$$$$$| $$   /$$'
@@ -97,5 +97,6 @@ module Display
     puts '                                       /$$  | $$'                  
     puts '                                      |  $$$$$$/'                             
     puts '                                       \______/'
+    puts ''
   end
 end
